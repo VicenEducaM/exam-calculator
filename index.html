@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculadora de Examen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0e0f11;
+    --surface: #161719;
+    --surface2: #1e2023;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.13);
+    --text: #f0ede8;
+    --muted: #888580;
+    --accent: #d4f060;
+    --accent-dim: rgba(212,240,96,0.12);
+    --accent-dim2: rgba(212,240,96,0.22);
+    --red: #ff6b6b;
+    --red-dim: rgba(255,107,107,0.12);
+    --green: #6bffa4;
+    --green-dim: rgba(107,255,164,0.12);
+    --amber: #ffc96b;
+    --amber-dim: rgba(255,201,107,0.12);
+    --mono: 'DM Mono', monospace;
+    --sans: 'Syne', sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  /* HEADER */
+  .header {
+    border-bottom: 1px solid var(--border);
+    padding: 2rem 2.5rem;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .header-title {
+    font-size: clamp(1.5rem, 4vw, 2.4rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1;
+  }
+  .header-title span { color: var(--accent); }
+  .header-sub {
+    font-size: 0.78rem;
+    color: var(--muted);
+    font-family: var(--mono);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-top: 6px;
+  }
+  .config-btn {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    background: transparent;
+    border: 1px solid var(--border2);
+    color: var(--muted);
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .config-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .config-btn .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+
+  /* MAIN LAYOUT */
+  .main {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    min-height: calc(100vh - 100px);
+  }
+
+  /* LEFT PANEL — CONFIG */
+  .panel-left {
+    border-right: 1px solid var(--border);
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  .config-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+  .config-modal.open { display: flex; }
+  .config-box {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 16px;
+    padding: 2rem;
+    width: 100%;
+    max-width: 480px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .config-box h2 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    letter-spacing: -0.02em;
+  }
+
+  .section-label {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 1rem;
+  }
+
+  .field-group { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem; }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label { font-size: 0.8rem; color: var(--muted); }
+  .field input[type=number], .field input[type=text] {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 0.9rem;
+    padding: 0.6rem 0.9rem;
+    width: 100%;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .field input:focus { border-color: var(--accent); }
+  .field small { font-size: 0.72rem; color: var(--muted); font-family: var(--mono); }
+
+  .btn-row { display: flex; gap: 10px; margin-top: 0.5rem; }
+  .btn-primary {
+    flex: 1;
+    background: var(--accent);
+    color: #0e0f11;
+    border: none;
+    border-radius: 8px;
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 0.85rem;
+    padding: 0.7rem;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .btn-primary:hover { opacity: 0.85; }
+  .btn-secondary {
+    background: transparent;
+    border: 1px solid var(--border2);
+    color: var(--muted);
+    border-radius: 8px;
+    font-family: var(--sans);
+    font-size: 0.85rem;
+    padding: 0.7rem 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-secondary:hover { border-color: var(--red); color: var(--red); }
+
+  /* STATS SIDEBAR */
+  .exam-summary .stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.82rem;
+  }
+  .exam-summary .stat-row:last-child { border-bottom: none; }
+  .stat-label { color: var(--muted); }
+  .stat-val { font-family: var(--mono); font-weight: 500; color: var(--text); }
+  .stat-val.accent { color: var(--accent); }
+
+  /* SLIDERS BLOCK */
+  .slider-block { display: flex; flex-direction: column; gap: 1.2rem; }
+  .slider-item {}
+  .slider-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+  .slider-name { font-size: 0.82rem; color: var(--muted); }
+  .slider-value {
+    font-family: var(--mono);
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .slider-value em { font-style: normal; font-size: 0.72rem; color: var(--muted); margin-left: 3px; }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--surface2);
+    outline: none;
+    cursor: pointer;
+  }
+  input[type=range].ok-range { background: linear-gradient(to right, var(--accent) 0%, var(--accent) var(--pct, 50%), var(--surface2) var(--pct, 50%)); }
+  input[type=range].fail-range { background: linear-gradient(to right, var(--red) 0%, var(--red) var(--pct, 20%), var(--surface2) var(--pct, 20%)); }
+  input[type=range].open-range { background: linear-gradient(to right, var(--amber) 0%, var(--amber) var(--pct, 80%), var(--surface2) var(--pct, 80%)); }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--text);
+    border: 3px solid var(--bg);
+    cursor: pointer;
+    box-shadow: 0 0 0 1px var(--border2);
+    transition: transform 0.15s;
+  }
+  input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+  input[type=range]::-moz-range-thumb {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--text);
+    border: 3px solid var(--bg);
+    cursor: pointer;
+  }
+
+  /* RIGHT PANEL — RESULTS */
+  .panel-right {
+    padding: 2rem 2.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  /* BIG SCORE */
+  .score-hero {
+    display: flex;
+    align-items: flex-end;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .score-number {
+    font-size: clamp(4rem, 10vw, 7rem);
+    font-weight: 700;
+    letter-spacing: -0.05em;
+    line-height: 1;
+    transition: color 0.3s;
+  }
+  .score-number.approved { color: var(--green); }
+  .score-number.failed { color: var(--red); }
+  .score-number.edge { color: var(--amber); }
+
+  .score-meta { padding-bottom: 0.5rem; }
+  .score-badge {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    padding: 4px 12px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    font-weight: 500;
+    margin-bottom: 8px;
+    transition: all 0.3s;
+  }
+  .score-badge.approved { background: var(--green-dim); color: var(--green); }
+  .score-badge.failed { background: var(--red-dim); color: var(--red); }
+  .score-badge.edge { background: var(--amber-dim); color: var(--amber); }
+  .score-max { font-size: 0.8rem; color: var(--muted); font-family: var(--mono); }
+
+  /* PROGRESS BAR */
+  .progress-wrap {
+    background: var(--surface2);
+    border-radius: 4px;
+    height: 6px;
+    width: 100%;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.4s cubic-bezier(0.4,0,0.2,1), background 0.3s;
+  }
+
+  /* BREAKDOWN CARDS */
+  .breakdown {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+  .bcard {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem;
+    transition: border-color 0.2s;
+  }
+  .bcard-label { font-size: 0.72rem; color: var(--muted); font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+  .bcard-val { font-size: 1.4rem; font-weight: 600; letter-spacing: -0.02em; font-family: var(--mono); }
+  .bcard-sub { font-size: 0.72rem; color: var(--muted); margin-top: 4px; font-family: var(--mono); }
+  .bcard.green .bcard-val { color: var(--green); }
+  .bcard.red .bcard-val { color: var(--red); }
+  .bcard.amber .bcard-val { color: var(--amber); }
+
+  /* STRATEGY TABLE */
+  .strategy-title {
+    font-size: 0.68rem;
+    font-family: var(--mono);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 1rem;
+  }
+  .strategy-grid {
+    display: grid;
+    gap: 8px;
+  }
+  .s-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 10px;
+    align-items: center;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.8rem 1rem;
+    font-size: 0.82rem;
+    transition: border-color 0.2s;
+  }
+  .s-row:hover { border-color: var(--border2); }
+  .s-row.current-row { border-color: var(--accent); background: var(--accent-dim); }
+  .s-col-label { color: var(--muted); }
+  .s-col-val { font-family: var(--mono); text-align: center; }
+  .s-col-risk {
+    font-family: var(--mono);
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-align: right;
+    color: var(--accent);
+  }
+  .s-row.current-row .s-col-risk { color: var(--text); }
+  .s-col-sub { font-size: 0.68rem; color: var(--muted); font-family: var(--mono); }
+
+  /* WARNING */
+  .warning-msg {
+    background: var(--red-dim);
+    border: 1px solid rgba(255,107,107,0.25);
+    border-radius: 8px;
+    padding: 0.7rem 1rem;
+    font-size: 0.8rem;
+    color: var(--red);
+    font-family: var(--mono);
+    display: none;
+  }
+  .warning-msg.visible { display: block; }
+
+  /* FOOTER */
+  .footer {
+    border-top: 1px solid var(--border);
+    padding: 1rem 2.5rem;
+    font-size: 0.72rem;
+    color: var(--muted);
+    font-family: var(--mono);
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 860px) {
+    .main { grid-template-columns: 1fr; }
+    .panel-left { border-right: none; border-bottom: 1px solid var(--border); }
+    .breakdown { grid-template-columns: 1fr 1fr 1fr; }
+  }
+  @media (max-width: 540px) {
+    .header { padding: 1.5rem; }
+    .panel-left, .panel-right { padding: 1.5rem; }
+    .breakdown { grid-template-columns: 1fr; }
+    .s-row { grid-template-columns: 1fr auto; }
+    .s-col-val { display: none; }
+    .footer { padding: 1rem 1.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div>
+    <h1 class="header-title">Calculadora de<br><span>examen tipo test</span></h1>
+    <p class="header-sub">Con penalización por respuesta incorrecta</p>
+  </div>
+  <button class="config-btn" onclick="openConfig()">
+    <span class="dot"></span> Configurar examen
+  </button>
+</header>
+
+<!-- CONFIG MODAL -->
+<div class="config-modal" id="configModal">
+  <div class="config-box">
+    <h2>Parámetros del examen</h2>
+
+    <p class="section-label">Estructura</p>
+    <div class="field-group">
+      <div class="field">
+        <label>Total de preguntas</label>
+        <input type="number" id="cfg-total" min="2" max="200" value="27">
+        <small>Incluye test y preguntas abiertas</small>
+      </div>
+      <div class="field">
+        <label>Preguntas abiertas (con valor fijo)</label>
+        <input type="number" id="cfg-open-count" min="0" max="20" value="1">
+      </div>
+      <div class="field">
+        <label>Puntos por pregunta abierta</label>
+        <input type="number" id="cfg-open-pts" min="0" max="10" step="0.01" value="1.5">
+        <small>Valor máximo de cada pregunta abierta</small>
+      </div>
+    </div>
+
+    <p class="section-label">Preguntas tipo test</p>
+    <div class="field-group">
+      <div class="field">
+        <label>Opciones por pregunta</label>
+        <input type="number" id="cfg-options" min="2" max="6" value="4">
+        <small>Determina la penalización (1 / (opciones-1))</small>
+      </div>
+      <div class="field">
+        <label>Puntuación total del test (suma de todos los aciertos)</label>
+        <input type="number" id="cfg-test-total" min="0.1" max="50" step="0.001" value="8.4994">
+        <small>Máximo alcanzable respondiendo bien todas las test</small>
+      </div>
+    </div>
+
+    <p class="section-label">Aprobado</p>
+    <div class="field-group">
+      <div class="field">
+        <label>Nota mínima para aprobar</label>
+        <input type="number" id="cfg-pass" min="0" max="10" step="0.01" value="5">
+      </div>
+    </div>
+
+    <div id="cfg-preview" style="background:var(--surface2);border-radius:8px;padding:0.8rem 1rem;font-size:0.78rem;font-family:var(--mono);color:var(--muted);margin-bottom:1rem;line-height:1.8;"></div>
+
+    <div class="btn-row">
+      <button class="btn-primary" onclick="applyConfig()">Aplicar</button>
+      <button class="btn-secondary" onclick="closeConfig()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- LEFT -->
+  <div class="panel-left">
+    <div>
+      <p class="section-label">Resumen del examen</p>
+      <div class="exam-summary" id="exam-summary"></div>
+    </div>
+
+    <div>
+      <p class="section-label">Simulador</p>
+      <div class="slider-block">
+
+        <div class="slider-item" id="open-sliders-wrap"></div>
+
+        <div class="slider-item">
+          <div class="slider-header">
+            <span class="slider-name">Respuestas correctas (test)</span>
+            <span class="slider-value" id="ok-display">—</span>
+          </div>
+          <input type="range" class="ok-range" id="ok-slider" min="0" max="26" value="13" oninput="onSliderChange()">
+        </div>
+
+        <div class="slider-item">
+          <div class="slider-header">
+            <span class="slider-name">Respuestas incorrectas (test)</span>
+            <span class="slider-value" id="fail-display">—</span>
+          </div>
+          <input type="range" class="fail-range" id="fail-slider" min="0" max="26" value="3" oninput="onSliderChange()">
+        </div>
+
+        <div class="warning-msg" id="warning-msg">
+          ⚠ Acertadas + falladas supera el total de preguntas test
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="panel-right">
+
+    <div>
+      <div class="score-hero">
+        <div class="score-number" id="score-number">—</div>
+        <div class="score-meta">
+          <div class="score-badge" id="score-badge">—</div>
+          <div class="score-max" id="score-max">— / —</div>
+        </div>
+      </div>
+      <div style="margin-top: 1rem;">
+        <div class="progress-wrap">
+          <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:0.72rem;color:var(--muted);font-family:var(--mono);margin-top:6px;">
+          <span>0</span>
+          <span id="progress-label">—</span>
+          <span id="progress-max">—</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="breakdown">
+      <div class="bcard green">
+        <div class="bcard-label">Aciertos test</div>
+        <div class="bcard-val" id="bc-ok">—</div>
+        <div class="bcard-sub" id="bc-ok-sub">—</div>
+      </div>
+      <div class="bcard red">
+        <div class="bcard-label">Penalización</div>
+        <div class="bcard-val" id="bc-fail">—</div>
+        <div class="bcard-sub" id="bc-fail-sub">—</div>
+      </div>
+      <div class="bcard amber">
+        <div class="bcard-label">Pregunta(s) abierta(s)</div>
+        <div class="bcard-val" id="bc-open">—</div>
+        <div class="bcard-sub" id="bc-open-sub">—</div>
+      </div>
+    </div>
+
+    <div>
+      <p class="strategy-title">Estrategia — aciertos mínimos según puntuación abierta</p>
+      <div class="strategy-grid" id="strategy-grid"></div>
+    </div>
+
+  </div>
+</div>
+
+<footer class="footer">
+  <span>Penalización = 1/(opciones−1) × valor_acierto</span>
+  <span id="footer-formula">—</span>
+</footer>
+
+<script>
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let cfg = {
+  total: 27,
+  openCount: 1,
+  openPtsEach: 1.5,
+  options: 4,
+  testTotal: 8.4994,
+  passScore: 5
+};
+
+// ─── DERIVED ─────────────────────────────────────────────────────────────────
+function derived() {
+  const nTest = cfg.total - cfg.openCount;
+  const acierto = nTest > 0 ? cfg.testTotal / nTest : 0;
+  const penalty = acierto / (cfg.options - 1);
+  const maxScore = cfg.testTotal + cfg.openCount * cfg.openPtsEach;
+  return { nTest, acierto, penalty, maxScore };
+}
+
+function fmt(n, d=2) {
+  return n.toFixed(d).replace('.', ',');
+}
+
+// ─── OPEN SLIDERS ─────────────────────────────────────────────────────────────
+function buildOpenSliders() {
+  const wrap = document.getElementById('open-sliders-wrap');
+  wrap.innerHTML = '';
+  for (let i = 0; i < cfg.openCount; i++) {
+    const id = `open-slider-${i}`;
+    const steps = 20;
+    const html = `
+      <div class="slider-item" style="margin-bottom:${i < cfg.openCount-1 ? '1.2rem' : '0'}">
+        <div class="slider-header">
+          <span class="slider-name">Pregunta abierta ${cfg.openCount > 1 ? (i+1) : ''} (0–${fmt(cfg.openPtsEach)} pts)</span>
+          <span class="slider-value" id="open-display-${i}">—</span>
+        </div>
+        <input type="range" class="open-range" id="${id}" min="0" max="${steps}" value="${steps}" oninput="onSliderChange()">
+      </div>`;
+    wrap.insertAdjacentHTML('beforeend', html);
+  }
+}
+
+function getOpenTotal() {
+  let total = 0;
+  const steps = 20;
+  for (let i = 0; i < cfg.openCount; i++) {
+    const el = document.getElementById(`open-slider-${i}`);
+    if (el) {
+      const val = parseInt(el.value) / steps * cfg.openPtsEach;
+      total += val;
+    }
+  }
+  return total;
+}
+
+function updateOpenDisplays() {
+  const steps = 20;
+  for (let i = 0; i < cfg.openCount; i++) {
+    const el = document.getElementById(`open-slider-${i}`);
+    const disp = document.getElementById(`open-display-${i}`);
+    if (el && disp) {
+      const val = parseInt(el.value) / steps * cfg.openPtsEach;
+      const pct = parseInt(el.value) / steps * 100;
+      el.style.setProperty('--pct', pct + '%');
+      el.style.background = `linear-gradient(to right, var(--amber) 0%, var(--amber) ${pct}%, var(--surface2) ${pct}%)`;
+      disp.innerHTML = `${fmt(val)} <em>pts</em>`;
+    }
+  }
+}
+
+// ─── EXAM SUMMARY SIDEBAR ────────────────────────────────────────────────────
+function buildSummary() {
+  const { nTest, acierto, penalty, maxScore } = derived();
+  const rows = [
+    ['Preguntas test', nTest],
+    ['Preguntas abiertas', cfg.openCount],
+    ['Valor por acierto (test)', `${fmt(acierto, 4)} pts`],
+    ['Penalización por error', `−${fmt(penalty, 4)} pts`],
+    ['Máximo test', `${fmt(cfg.testTotal, 4)} pts`],
+    ['Máximo abierta(s)', `${fmt(cfg.openCount * cfg.openPtsEach, 2)} pts`],
+    ['Nota máxima total', `${fmt(maxScore, 3)} pts`],
+    ['Nota para aprobar', `${fmt(cfg.passScore)} pts`],
+  ];
+  const el = document.getElementById('exam-summary');
+  el.innerHTML = rows.map(([l, v], i) => `
+    <div class="stat-row">
+      <span class="stat-label">${l}</span>
+      <span class="stat-val ${i >= 6 ? 'accent' : ''}">${v}</span>
+    </div>`).join('');
+}
+
+// ─── STRATEGY TABLE ──────────────────────────────────────────────────────────
+function buildStrategy() {
+  const { nTest, acierto, penalty, maxScore } = derived();
+  const currentOk = parseInt(document.getElementById('ok-slider').value);
+  const currentFail = parseInt(document.getElementById('fail-slider').value);
+  const openTotal = getOpenTotal();
+
+  // generate strategy rows: vary open from 0, 25%, 50%, 75%, 100%
+  const openSteps = [0, 0.25, 0.5, 0.75, 1.0];
+  const rows = openSteps.map(frac => {
+    const openPts = frac * cfg.openCount * cfg.openPtsEach;
+    const needed = Math.max(0, cfg.passScore - openPts);
+    let minOk = nTest + 1;
+    for (let ok = 0; ok <= nTest; ok++) {
+      if (ok * acierto >= needed - 1e-9) { minOk = ok; break; }
+    }
+    if (minOk > nTest) return null;
+    const margin = minOk * acierto + openPts - cfg.passScore;
+    const maxRisk = Math.max(0, Math.floor(margin / penalty));
+    const remaining = nTest - minOk;
+    const safeRisk = Math.min(maxRisk, remaining);
+    return { openPts, minOk, safeRisk, frac };
+  }).filter(Boolean);
+
+  const grid = document.getElementById('strategy-grid');
+  grid.innerHTML = rows.map(r => {
+    const isCurrent = Math.abs(r.openPts - openTotal) < cfg.openPtsEach * 0.15;
+    return `
+      <div class="s-row ${isCurrent ? 'current-row' : ''}">
+        <div>
+          <div class="s-col-label">Abierta(s): <strong style="color:var(--amber)">${fmt(r.openPts)} pts</strong> ${isCurrent ? '← actual' : ''}</div>
+        </div>
+        <div class="s-col-val">
+          <div>mín. <strong>${r.minOk}</strong> aciertos</div>
+          <div class="s-col-sub">${fmt(r.minOk * acierto + r.openPts)} pts</div>
+        </div>
+        <div class="s-col-risk">
+          arriesgar ≤${r.safeRisk}
+          <div class="s-col-sub">respuestas</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ─── MAIN RENDER ─────────────────────────────────────────────────────────────
+function onSliderChange() {
+  const { nTest, acierto, penalty, maxScore } = derived();
+
+  const okSlider = document.getElementById('ok-slider');
+  const failSlider = document.getElementById('fail-slider');
+
+  let ok = parseInt(okSlider.value);
+  let fail = parseInt(failSlider.value);
+
+  // clamp
+  const warn = document.getElementById('warning-msg');
+  if (ok + fail > nTest) {
+    warn.classList.add('visible');
+    fail = Math.max(0, nTest - ok);
+    failSlider.value = fail;
+  } else {
+    warn.classList.remove('visible');
+  }
+
+  updateOpenDisplays();
+  const openTotal = getOpenTotal();
+
+  // pct for sliders
+  const okPct = ok / nTest * 100;
+  const failPct = nTest > 0 ? fail / nTest * 100 : 0;
+  okSlider.style.setProperty('--pct', okPct + '%');
+  okSlider.style.background = `linear-gradient(to right, var(--accent) 0%, var(--accent) ${okPct}%, var(--surface2) ${okPct}%)`;
+  failSlider.style.setProperty('--pct', failPct + '%');
+  failSlider.style.background = `linear-gradient(to right, var(--red) 0%, var(--red) ${failPct}%, var(--surface2) ${failPct}%)`;
+
+  // displays
+  document.getElementById('ok-display').innerHTML = `${ok} <em>/ ${nTest}</em>`;
+  document.getElementById('fail-display').innerHTML = `${fail} <em>/ ${nTest}</em>`;
+
+  // score
+  const ptsOk = ok * acierto;
+  const ptsFail = fail * penalty;
+  const score = ptsOk - ptsFail + openTotal;
+  const pct = Math.min(100, Math.max(0, score / maxScore * 100));
+
+  // state
+  const margin = score - cfg.passScore;
+  const state = score >= cfg.passScore ? (margin < acierto ? 'edge' : 'approved') : 'failed';
+  const labels = { approved: 'APROBADO', failed: 'SUSPENSO', edge: 'JUSTO' };
+  const colors = { approved: 'var(--green)', failed: 'var(--red)', edge: 'var(--amber)' };
+  const fillColors = { approved: '#6bffa4', failed: '#ff6b6b', edge: '#ffc96b' };
+
+  document.getElementById('score-number').textContent = fmt(score);
+  document.getElementById('score-number').className = `score-number ${state}`;
+  document.getElementById('score-badge').textContent = labels[state];
+  document.getElementById('score-badge').className = `score-badge ${state}`;
+  document.getElementById('score-max').textContent = `sobre ${fmt(cfg.passScore)} para aprobar`;
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-fill').style.background = fillColors[state];
+  document.getElementById('progress-label').textContent = fmt(score) + ' pts';
+  document.getElementById('progress-max').textContent = fmt(maxScore) + ' pts';
+
+  // breakdown
+  document.getElementById('bc-ok').textContent = `+${fmt(ptsOk)}`;
+  document.getElementById('bc-ok-sub').textContent = `${ok} × ${fmt(acierto,4)}`;
+  document.getElementById('bc-fail').textContent = `−${fmt(ptsFail)}`;
+  document.getElementById('bc-fail-sub').textContent = `${fail} × ${fmt(penalty,4)}`;
+  document.getElementById('bc-open').textContent = `+${fmt(openTotal)}`;
+  document.getElementById('bc-open-sub').textContent = `${cfg.openCount} pregunta(s)`;
+
+  // footer
+  document.getElementById('footer-formula').textContent =
+    `acierto=${fmt(acierto,4)} pts | penalización=1/${cfg.options-1} × ${fmt(acierto,4)} = −${fmt(penalty,4)} pts`;
+
+  buildStrategy();
+}
+
+// ─── SLIDERS RANGE UPDATE ────────────────────────────────────────────────────
+function updateSliderRanges() {
+  const { nTest } = derived();
+  const okS = document.getElementById('ok-slider');
+  const failS = document.getElementById('fail-slider');
+  okS.max = nTest;
+  failS.max = nTest;
+  if (parseInt(okS.value) > nTest) okS.value = Math.floor(nTest / 2);
+  if (parseInt(failS.value) > nTest) failS.value = 0;
+}
+
+// ─── CONFIG MODAL ────────────────────────────────────────────────────────────
+function openConfig() {
+  document.getElementById('cfg-total').value = cfg.total;
+  document.getElementById('cfg-open-count').value = cfg.openCount;
+  document.getElementById('cfg-open-pts').value = cfg.openPtsEach;
+  document.getElementById('cfg-options').value = cfg.options;
+  document.getElementById('cfg-test-total').value = cfg.testTotal;
+  document.getElementById('cfg-pass').value = cfg.passScore;
+  updateCfgPreview();
+  document.getElementById('configModal').classList.add('open');
+}
+
+function closeConfig() {
+  document.getElementById('configModal').classList.remove('open');
+}
+
+function updateCfgPreview() {
+  const total = parseInt(document.getElementById('cfg-total').value) || 0;
+  const openC = parseInt(document.getElementById('cfg-open-count').value) || 0;
+  const openP = parseFloat(document.getElementById('cfg-open-pts').value) || 0;
+  const opts = parseInt(document.getElementById('cfg-options').value) || 4;
+  const testT = parseFloat(document.getElementById('cfg-test-total').value) || 0;
+  const pass = parseFloat(document.getElementById('cfg-pass').value) || 5;
+  const nTest = total - openC;
+  const ac = nTest > 0 ? testT / nTest : 0;
+  const pen = ac / (opts - 1);
+  const maxT = testT + openC * openP;
+  document.getElementById('cfg-preview').innerHTML =
+    `Preguntas test: <strong style="color:var(--accent)">${nTest}</strong> &nbsp;|&nbsp; ` +
+    `Valor acierto: <strong style="color:var(--accent)">${ac.toFixed(4)}</strong> pts &nbsp;|&nbsp; ` +
+    `Penalización: <strong style="color:var(--red)">−${pen.toFixed(4)}</strong> pts<br>` +
+    `Nota máxima: <strong style="color:var(--accent)">${maxT.toFixed(3)}</strong> pts &nbsp;|&nbsp; ` +
+    `Aprobar con: <strong style="color:var(--amber)">${pass}</strong> pts`;
+}
+
+['cfg-total','cfg-open-count','cfg-open-pts','cfg-options','cfg-test-total','cfg-pass']
+  .forEach(id => document.getElementById(id).addEventListener('input', updateCfgPreview));
+
+function applyConfig() {
+  cfg.total = parseInt(document.getElementById('cfg-total').value) || cfg.total;
+  cfg.openCount = parseInt(document.getElementById('cfg-open-count').value);
+  cfg.openPtsEach = parseFloat(document.getElementById('cfg-open-pts').value);
+  cfg.options = parseInt(document.getElementById('cfg-options').value);
+  cfg.testTotal = parseFloat(document.getElementById('cfg-test-total').value);
+  cfg.passScore = parseFloat(document.getElementById('cfg-pass').value);
+  closeConfig();
+  buildOpenSliders();
+  updateSliderRanges();
+  buildSummary();
+  onSliderChange();
+}
+
+document.getElementById('configModal').addEventListener('click', function(e) {
+  if (e.target === this) closeConfig();
+});
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+buildOpenSliders();
+updateSliderRanges();
+buildSummary();
+onSliderChange();
+</script>
+</body>
+</html>
